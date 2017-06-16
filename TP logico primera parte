@@ -1,0 +1,50 @@
+%pareja(Persona, Persona)
+pareja(marsellus, mia).
+pareja(pumkin,honeyBunny).
+
+%2) Más parejas
+pareja(bernardo,bianca).
+pareja(bernardo,charo).
+%No se sabe si Bianca es pareja de Demóstenes.
+%No hace falta,por principio de universo cerrado.
+
+%trabajaPara(Empleador, Empleado)
+trabajaPara(marsellus, vincent).
+trabajaPara(marsellus, jules).
+trabajaPara(marsellus, winston).
+
+% 3) Nuevos trabajadores
+
+trabajaPara(Quien,bernardo):-
+	trabajaPara(marsellus,Quien),
+    Quien\=jules.
+
+trabajaPara(Empleador,george):-
+	saleCon(bernardo,Empleador).
+
+%1) Salen juntos.
+
+saleCon(Quien,Cual):- 
+	pareja(Quien,Cual).
+saleCon(Quien,Cual):- 
+	pareja(Cual,Quien).
+
+
+% 4) Fidelidad
+
+esFiel(Personaje):-
+	saleCon(Personaje,_),
+    not((saleCon(Personaje, OtroPersonaje1),
+	saleCon(Personaje, OtroPersonaje2),
+	OtroPersonaje1\=OtroPersonaje2)).
+
+%5) Acatar órdenes
+
+%caso base
+acataOrden(Jefe, OtroPersonaje1):-
+	trabajaPara(Jefe,OtroPersonaje1).
+
+%caso recursivo
+acataOrden(Jefe, OtroPersonaje2):- 
+	trabajaPara(Jefe, OtroPersonaje1),
+    acataOrden(OtroPersonaje1, OtroPersonaje2).
