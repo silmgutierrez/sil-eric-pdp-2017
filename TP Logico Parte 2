@@ -1,0 +1,172 @@
+
+%pareja(Persona, Persona)
+pareja(marsellus, mia).
+pareja(pumkin,honeyBunny).
+
+%2) Más parejas
+pareja(bernardo,bianca).
+pareja(bernardo,charo).
+%No se sabe si Bianca es pareja de Demóstenes.
+%No hace falta,por principio de universo cerrado.
+
+%trabajaPara(Empleador, Empleado)
+trabajaPara(marsellus, vincent).
+trabajaPara(marsellus, jules).
+trabajaPara(marsellus, winston).
+
+% 3) Nuevos trabajadores
+
+trabajaPara(Quien,bernardo):-
+	trabajaPara(marsellus,Quien),
+    Quien\=jules.
+
+trabajaPara(Empleador,george):-
+	saleCon(bernardo,Empleador).
+
+%1) Salen juntos.
+
+saleCon(Quien,Cual):- 
+	pareja(Quien,Cual).
+
+saleCon(Quien,Cual):- 
+	pareja(Cual,Quien).
+
+
+% 4) Fidelidad
+
+esFiel(Personaje):-
+	saleCon(Personaje,_),
+    not((saleCon(Personaje, OtroPersonaje1),
+	saleCon(Personaje, OtroPersonaje2),
+	OtroPersonaje1\=OtroPersonaje2)).
+
+%5) Acatar órdenes
+
+%caso base
+
+acataOrden(Jefe, OtroPersonaje1):-
+	trabajaPara(Jefe,OtroPersonaje1).
+
+%caso recursivo
+
+acataOrden(Jefe, OtroPersonaje2):- 
+	trabajaPara(Jefe, OtroPersonaje1),
+    acataOrden(OtroPersonaje1, OtroPersonaje2).
+
+% Parte2 
+
+% Información base
+% personaje(Nombre, Ocupacion)
+%%ladron(LugaresQueRoba).
+%%mafioso(TipoDeMafioso).
+%%actriz(PeliculasEnLasQueActuo).
+%%vender(ArticulosQueVende).
+personaje(pumkin, ladron([estacionesDeServicio, licorerias])).
+personaje(honeyBunny, ladron([licorerias, estacionesDeServicio])).
+personaje(vincent, mafioso(maton)).
+personaje(jules, mafioso(maton)).
+personaje(marsellus, mafioso(capo)).
+personaje(winston, mafioso(resuelveProblemas)).
+personaje(mia, actriz([foxForceFive])).
+personaje(butch, boxeador).
+personaje(bernardo, mafioso(cerebro)).
+personaje(bianca, actriz([elPadrino1])).
+personaje(elVendedor, vender([humo, iphone])).
+personaje(jimmie, vender([auto])).
+
+% encargo(Solicitante, Encargado, Encargo).
+% los encargos pueden ser cuidar(Protegido), ayudar(Ayudado), buscar(Buscado, Lugar)
+
+encargo(marsellus, vincent, cuidar(mia)).
+encargo(vincent, elVendedor, cuidar(mia)).
+encargo(marsellus, winston, ayudar(jules)).
+encargo(marsellus, winston, ayudar(vincent)).
+encargo(marsellus, vincent, buscar(butch, losAngeles)).
+encargo(bernardo, vincent, buscar(jules, fuerteApache)).
+encargo(bernardo, winston, buscar(jules, sanMartin)).
+encargo(bernardo, winston, buscar(jules, lugano)).
+
+amigo(vincent, jules).
+amigo(jules, jimmie).
+amigo(vincent, elVendedor).
+
+% 1) Personajes Peligrosos
+
+esPeligroso(Nombre) :-
+	realizaActividadPeligrosa(Nombre).
+
+esPeligroso(Nombre) :-
+	tieneJefePeligroso(Nombre).
+
+realizaActividadPeligrosa(Nombre) :-
+	personaje(Nombre, mafioso(maton)).
+
+realizaActividadPeligrosa(Nombre) :-
+	personaje(Nombre, ladron(LugaresQueRoba)),
+	member(licorerias, LugaresQueRoba).
+
+tieneJefePeligroso(Nombre) :-
+	trabajaPara(Jefe, Nombre),
+	encargo(Nombre, Jefe, _),
+	realizaActividadPeligrosa(Jefe).
+
+ % 2) San Cayetano 
+
+sanCayetano(Nombre) :-
+	encargo(Nombre, _, _),
+    forall(tieneCercaA(OtroPersonaje, Nombre), encargo(Nombre, OtroPersonaje, _)).
+
+tieneCercaA(Nombre, OtroPersonaje) :-
+	amigo(Nombre, OtroPersonaje).
+
+tieneCercaA(Nombre, OtroPersonaje) :-
+	amigo(OtroPersonaje, Nombre).
+
+tieneCercaA(Nombre, OtroPersonaje) :-
+	trabajanUnoParaElOtro(Nombre, OtroPersonaje).
+
+trabajanUnoParaElOtro(Nombre, OtroPersonaje) :-
+	trabajaPara(Nombre, OtroPersonaje).
+
+trabajanUnoParaElOtro(Nombre, OtroPersonaje) :-
+	trabajaPara(OtroPersonaje, Nombre).
+
+% 3) Nivel De Respeto
+
+nivelRespeto(Nombre, Nivel) :-
+	personaje(Nombre, actriz(PeliculasEnLasQueActuo)),
+	length(PeliculasEnLasQueActuo, Cantidad),
+	Nivel is Cantidad/10.
+
+nivelRespeto(Nombre, 10) :-
+	personaje(Nombre, mafioso(resuelveProblemas)).
+
+nivelRespeto(Nombre, 20) :-
+	personaje(Nombre, mafioso(capo)).
+
+nivelRespeto(vincent, 25).
+
+% 4) Personajes respetables
+
+respetabilidad(Respetables, NoRespetables) :-
+	findall(Nombre,respetable(Nombre), Respetados),
+	length(Respetados, Respetables),
+	findall(Nombre, (personaje(Nombre, _), not(respetable(Nombre))), NoRespetados),
+	length(NoRespetados, NoRespetables).
+
+respetable(Nombre) :-
+	nivelRespeto(Nombre, Nivel),
+	Nivel > 9.
+
+% 5) Mas atareado
+
+masAtareado(Nombre) :-
+	personaje(Nombre, _),
+	forall(cantidadEncargos(_, Cantidad2), (cantidadEncargos(Nombre, Cantidad), Cantidad >= Cantidad2)).
+
+cantidadEncargos(Nombre, Cantidad) :-
+	personaje(Nombre, _),
+	findall(Encargo, encargo(_, Nombre, Encargo), Encargos),
+	length(Encargos, Cantidad).
+
+
